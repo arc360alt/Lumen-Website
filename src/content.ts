@@ -1,5 +1,7 @@
-// All site copy lives here. Swap DOWNLOAD_URL for the real ISO link when it's ready.
+// All site copy lives here. Download buttons get their link from DOWNLOAD_API at runtime;
+// DOWNLOAD_URL is the fallback if the API is unreachable or no ISO is available yet.
 export const DOWNLOAD_URL = 'https://github.com/arc360alt';
+export const DOWNLOAD_API = 'https://vertexdl.arc360hub.com/latest';
 export const TRY_URL = 'https://arc360alt.github.io/LiquidDesktop/renderer/index.html';
 export const LIQUID_REPO = 'https://github.com/arc360alt/LiquidDesktop';
 

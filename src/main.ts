@@ -1,6 +1,6 @@
 import '@fontsource-variable/inter';
 import './style.css';
-import { DOWNLOAD_URL, TRY_URL, LIQUID_REPO, drop, featureGroups, shots, terminalScript } from './content';
+import { DOWNLOAD_URL, DOWNLOAD_API, TRY_URL, LIQUID_REPO, drop, featureGroups, shots, terminalScript } from './content';
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector(sel) as T;
 const el = (html: string) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild as HTMLElement; };
@@ -99,6 +99,7 @@ function openApp(id: string) {
   </section>`);
   Object.assign(win.style, { left: p.x + 'px', top: p.y + 'px', width: p.w + 'px', height: p.h + 'px' });
   win.querySelector('.win-body')!.append(app.render(win));
+  applyDownload(win);
   $('#desktop').append(win);
   open.set(id, win);
   setTimeout(() => win!.classList.remove('opening'), 400);
@@ -162,7 +163,7 @@ function buildDock() {
     dock.append(b);
   });
   dock.append(el('<span class="dock-sep"></span>'));
-  dock.append(el(`<a class="dock-cta" href="${DOWNLOAD_URL}" target="_blank" rel="noopener">${sv('<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/>')}Download Lumen</a>`));
+  dock.append(el(`<a class="dock-cta" href="${DOWNLOAD_URL}" data-dl target="_blank" rel="noopener">${sv('<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/>')}Download Lumen</a>`));
 }
 function syncDock() { document.querySelectorAll<HTMLElement>('.dock-item').forEach((b) => b.classList.toggle('running', open.has(b.dataset.app!))); }
 
@@ -209,7 +210,7 @@ function welcome() {
     <p class="tag">Arch Linux, poured into glass.</p>
     <p class="lede">Lumen is Arch Linux with <b>LiquidDesktop</b>, a Liquid Glass desktop written from scratch in HTML and JavaScript. Flathub, a login screen that matches the desktop, and a friendly installer are already set up.</p>
     <div class="cta-row">
-      <a class="btn primary" href="${DOWNLOAD_URL}" target="_blank" rel="noopener">Download Lumen</a>
+      <a class="btn primary" href="${DOWNLOAD_URL}" data-dl target="_blank" rel="noopener">Download Lumen</a>
       <a class="btn" href="${TRY_URL}" target="_blank" rel="noopener">Try LiquidDesktop in your browser ↗</a>
     </div>
     <div class="chips"><button data-go="features">Explore features →</button><button data-go="gallery">See screenshots →</button><button data-go="terminal">Build it yourself →</button></div>
@@ -282,9 +283,9 @@ function download() {
   return el(`<div class="store">
     <div class="store-head">
       <div class="app-ico">${drop}</div>
-      <div><h2>Lumen</h2><p>Arch Linux · LiquidDesktop</p><a class="btn primary get" href="${DOWNLOAD_URL}" target="_blank" rel="noopener">Download ISO</a></div>
+      <div><h2>Lumen</h2><p>Arch Linux · LiquidDesktop</p><a class="btn primary get" href="${DOWNLOAD_URL}" data-dl target="_blank" rel="noopener">Download ISO</a><p class="dl-meta fine">Checking for the latest build…</p></div>
     </div>
-    <div class="facts"><div><small>Base</small><b>Arch</b></div><div><small>Arch</small><b>x86_64</b></div><div><small>Boot</small><b>UEFI · BIOS</b></div><div><small>Apps</small><b>Flathub</b></div></div>
+    <div class="facts"><div><small>Version</small><b class="dl-version">…</b></div><div><small>Arch</small><b>x86_64</b></div><div><small>Boot</small><b>UEFI · BIOS</b></div><div><small>Apps</small><b>Flathub</b></div></div>
     <h3>Getting started</h3>
     <ol class="steps">
       <li><b>Download the ISO</b><span>Then write it to a USB stick with Ventoy, Fedora Media Writer or <code>dd</code>.</span></li>
@@ -295,8 +296,49 @@ function download() {
   </div>`);
 }
 
+/* ---------------------------------------------------------------- download API */
+// GET DOWNLOAD_API → { available, version, fileName, downloadUrl, size }
+interface Latest { available: boolean; version?: string; fileName?: string; downloadUrl?: string; size?: number }
+type DlState = { kind: 'loading' } | { kind: 'ready'; info: Latest } | { kind: 'unavailable' } | { kind: 'error' };
+let dl: DlState = { kind: 'loading' };
+const fmtSize = (b?: number) => (b ? `${(b / 1024 ** 3).toFixed(1)} GB` : '');
+
+function applyDownload(root: ParentNode = document) {
+  const ready = dl.kind === 'ready' ? dl.info : null;
+  root.querySelectorAll<HTMLAnchorElement>('[data-dl]').forEach((a) => {
+    a.href = ready?.downloadUrl ?? DOWNLOAD_URL;
+    a.classList.toggle('soon', dl.kind === 'unavailable');
+    // a direct ISO link downloads in place; the GitHub fallback opens in a new tab
+    if (ready) { a.removeAttribute('target'); a.setAttribute('download', ready.fileName ?? ''); }
+    else { a.target = '_blank'; a.removeAttribute('download'); }
+    if (dl.kind === 'unavailable' && !a.dataset.label) { a.dataset.label = a.lastChild!.textContent!; a.lastChild!.textContent = 'ISO coming soon'; }
+    if (dl.kind !== 'unavailable' && a.dataset.label) { a.lastChild!.textContent = a.dataset.label; delete a.dataset.label; }
+    a.title = ready ? `${ready.fileName} · ${fmtSize(ready.size)}` : dl.kind === 'unavailable' ? 'No ISO yet: follow progress on GitHub' : '';
+  });
+  root.querySelectorAll<HTMLElement>('.dl-meta').forEach((m) => {
+    m.textContent = ready ? `${ready.fileName} · ${fmtSize(ready.size)}`
+      : dl.kind === 'unavailable' ? 'No ISO is available right now. Check back soon.'
+      : dl.kind === 'error' ? 'Couldn’t reach the download server. The button opens GitHub instead.'
+      : 'Checking for the latest build…';
+  });
+  root.querySelectorAll<HTMLElement>('.dl-version').forEach((v) => (v.textContent = ready?.version ?? '—'));
+}
+
+async function loadLatest() {
+  try {
+    const res = await fetch(DOWNLOAD_API, { cache: 'no-store' });
+    if (!res.ok) throw new Error(String(res.status));
+    const info = (await res.json()) as Latest;
+    dl = info.available && info.downloadUrl ? { kind: 'ready', info } : { kind: 'unavailable' };
+  } catch {
+    dl = { kind: 'error' };
+  }
+  applyDownload();
+}
+
 /* ---------------------------------------------------------------- boot */
 buildMenubar();
+loadLatest();
 buildDock();
 paintWallpaper();
 let rz = 0;
