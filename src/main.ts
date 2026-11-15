@@ -291,6 +291,7 @@ function download() {
       <li><b>Download the ISO</b><span>Then write it to a USB stick with Ventoy, Fedora Media Writer or <code>dd</code>.</span></li>
       <li><b>Boot it</b><span>You're logged straight into LiquidDesktop and <i>Install Lumen</i> opens. If you need them, the live login is <code>lumen</code> / <code>lumen</code>.</span></li>
       <li><b>Install</b><span>Choose a language, time zone, keyboard and disk, create your account, and you're done. No internet needed.</span></li>
+      <li><b>Update</b><span>You may need to update the OS when its installed, as I'm not rebuilding the .ISO every time an update to the destktop or OS is made.</span></li>
     </ol>
     <p class="fine">Not ready to switch? <a href="${TRY_URL}" target="_blank" rel="noopener">Try LiquidDesktop in your browser</a> or <a href="${LIQUID_REPO}" target="_blank" rel="noopener">install it on your current distro</a>.</p>
   </div>`);
