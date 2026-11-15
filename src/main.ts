@@ -163,7 +163,9 @@ function buildDock() {
     dock.append(b);
   });
   dock.append(el('<span class="dock-sep"></span>'));
-  dock.append(el(`<a class="dock-cta" href="${DOWNLOAD_URL}" data-dl target="_blank" rel="noopener">${sv('<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/>')}Download Lumen</a>`));
+  const cta = el(`<button class="dock-cta">${sv('<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/>')}Download Lumen</button>`);
+  cta.onclick = () => openApp('download');
+  dock.append(cta);
 }
 function syncDock() { document.querySelectorAll<HTMLElement>('.dock-item').forEach((b) => b.classList.toggle('running', open.has(b.dataset.app!))); }
 
@@ -210,7 +212,7 @@ function welcome() {
     <p class="tag">Arch Linux, poured into glass.</p>
     <p class="lede">Lumen is Arch Linux with <b>LiquidDesktop</b>, a Liquid Glass desktop written from scratch in HTML and JavaScript. Flathub, a login screen that matches the desktop, and a friendly installer are already set up.</p>
     <div class="cta-row">
-      <a class="btn primary" href="${DOWNLOAD_URL}" data-dl target="_blank" rel="noopener">Download Lumen</a>
+      <button class="btn primary" data-go="download">Download Lumen</button>
       <a class="btn" href="${TRY_URL}" target="_blank" rel="noopener">Try LiquidDesktop in your browser ↗</a>
     </div>
     <div class="chips"><button data-go="features">Explore features →</button><button data-go="gallery">See screenshots →</button><button data-go="terminal">Build it yourself →</button></div>
